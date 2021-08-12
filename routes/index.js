@@ -69,11 +69,21 @@ router.get("/tags/:tagName/:date", async function (req, res, next) {
     if (result && result.length > 0) {
       console.log(result);
       //console.log(result.date)
-      const formatted = result.map((v) => {
-        v.date = format(new Date(v.date), "yyyy-MM-dd");
-        return v;
-      });
-      res.status(200).send(formatted);
+      const relatedTags = {}
+      const articles = result.map(v=>{
+        v.tags.forEach(t=>{
+          relatedTags[t] = 'exists'
+        })
+        return v.id})
+      const count = result.length
+
+      const final = {
+        tag: req.params.tagName, 
+        count,
+        articles,
+        related_tags: Object.keys(relatedTags)
+      }
+      res.status(200).send(final);
     } else {
       res.status(204).send();
     }
