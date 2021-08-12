@@ -13,14 +13,15 @@ router.post('/articles', async function(req, res, next) {
     console.log(m)
     if (m.error) {
       const errMessages = m.error.details.map(v=>v.message)
-      res.status(400).send(errMessages)
+      return res.status(400).send(errMessages)
     }
     
     try {
-      await db.insert(m.value)
+      await db.insertArticle(m.value)
       res.status(200).send()
     } catch (e) {
-      
+      console.log(e)
+      res.status(500).send(e.message)
     }
 
 
