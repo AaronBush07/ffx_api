@@ -12,4 +12,5 @@ dummy.forEach(async val=> {
     db.public.none(queryText)
 })
 
+
 module.exports = db
