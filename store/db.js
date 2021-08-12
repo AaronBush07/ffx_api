@@ -18,7 +18,7 @@ module.exports = Object.freeze({
     },
     getArticle(id) {
         try {
-            return db.public.one(`SELECT * FROM articles WHERE id = ${id}`)
+            return db.public.one(`SELECT id, title, posted_date as date, body, tags FROM articles WHERE id = ${id}`)
         }
         catch (e) {
             throw e

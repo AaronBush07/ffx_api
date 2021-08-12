@@ -3,6 +3,7 @@ const router = express.Router();
 const validate = require('../schema')
 const Joi = require('joi')
 const db = require('../store/db')
+const {format} = require('date-fns')
 
 /* GET home page. */
 router.post('/articles', async function(req, res, next) {
@@ -37,6 +38,8 @@ router.get('/articles/:id',  function (req, res,next) {
     Joi.assert(req.params.id, Joi.number())
     const result = db.getArticle(req.params.id)
     if (result) {
+      //Clumsy implementation
+      result.date = format(new Date(result.date), 'yyyy-MM-dd')
       res.status(200).send(result) 
     } else {
       res.status(204).send()
