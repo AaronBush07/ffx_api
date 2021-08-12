@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const validate = require('../schema')
+const Joi = require('joi')
 const db = require('../store/db')
 
 /* GET home page. */
@@ -24,11 +25,29 @@ router.post('/articles', async function(req, res, next) {
       res.status(500).send(e.message)
     }
 
-
   } else {
     res.status(400).send("Bad Request")
   }
   
 });
+
+
+router.get('/articles/:id',  function (req, res,next) {
+  try {
+    Joi.assert(req.params.id, Joi.number())
+    const result = db.getArticle(req.params.id)
+    if (result) {
+      res.status(200).send(result) 
+    } else {
+      res.status(204).send()
+    }
+
+  }
+  catch (e) {
+    console.log(e)
+    res.status(500).send(e)
+  }
+
+})
 
 module.exports = router;
