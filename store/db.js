@@ -1,0 +1,19 @@
+const db = require('./index')
+const pgp = require('pg-promise')()
+//const client = require('./index')
+
+module.exports = Object.freeze({
+    async insert(data) {
+        const {title, date:postedDate, body, tags} = data
+        console.log('ddd', data)
+        try {
+            const queryText = await pgp.as.format(`INSERT INTO articles(title, posted_date, body, tags) VALUES ($1,$2,$3,$4)`, [title, postedDate, body, tags])
+            console.log(queryText)
+            db.public.none(queryText)
+            return
+        }
+        catch (e) {
+            throw e
+        }
+    }
+})

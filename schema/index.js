@@ -3,7 +3,6 @@ const Joi = require('joi')
 
 /**Articles Schema */
 const schema = Joi.object().keys({
-    id: Joi.number().required(),
     title: Joi.string().required(),
     date: Joi.date().format('YYYY-MM-DD').required(),
     body: Joi.string().required(),

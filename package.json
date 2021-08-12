@@ -15,8 +15,11 @@
     "jade": "~1.11.0",
     "joi": "^17.4.2",
     "morgan": "~1.9.1",
+    "node-postgres": "^0.6.2",
     "nodemon": "^2.0.12",
-    "pg-mem": "^1.9.15"
+    "pg": "^8.7.1",
+    "pg-mem": "^1.9.15",
+    "pg-promise": "^10.11.0"
   },
   "devDependencies": {
     "jest": "^27.0.6",
