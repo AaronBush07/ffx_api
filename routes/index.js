@@ -53,36 +53,29 @@ router.get("/tags/:tagName/:date", async function (req, res, next) {
       tagName: Joi.string(),
       date: Joi.date().format("YYYYMMDD"),
     });
-    const m = await schema.validate(
-      { tagName: req.params.tagName, date: req.params.date },
-      { abortEarly: false }
-    );
-    console.log(req.params);
+    const { tagName, date } = req.params;
+    const m = await schema.validate({ tagName, date }, { abortEarly: false });
+
+    /**Apologies for the date slice */
     const result = await db.getTags(
-      req.params.tagName,
-      req.params.date.slice(0, 4) +
-        "-" +
-        req.params.date.slice(4, 6) +
-        "-" +
-        req.params.date.slice(6, 8)
+      tagName,
+      date.slice(0, 4) + "-" + date.slice(4, 6) + "-" + date.slice(6, 8)
     );
     if (result && result.length > 0) {
-      console.log(result);
-      //console.log(result.date)
-      const relatedTags = {}
-      const articles = result.map(v=>{
-        v.tags.forEach(t=>{
-          relatedTags[t] = 'exists'
-        })
-        return v.id})
-      const count = result.length
-
+      const relatedTags = {};
+      const articles = result.map((v) => {
+        v.tags.forEach((t) => {
+          if (t !== tagName) relatedTags[t] = "exists";
+        });
+        return v.id;
+      });
+      
       const final = {
-        tag: req.params.tagName, 
-        count,
+        tag: tagName,
+        count: result.length,
         articles,
-        related_tags: Object.keys(relatedTags)
-      }
+        related_tags: Object.keys(relatedTags),
+      };
       res.status(200).send(final);
     } else {
       res.status(204).send();
