@@ -5,25 +5,20 @@ const Joi = require("joi").extend(require("@joi/date"));
 const db = require("../store/db");
 const { format } = require("date-fns");
 
-/* GET home page. */
+/* POST Articles */
 router.post("/articles", async function (req, res, next) {
-  //console.log(req)
   const { body } = req;
   if (body) {
-    console.log(body);
     const m = await validate(body);
-    console.log(m);
     if (m.error) {
       const errMessages = m.error.details.map((v) => v.message);
       return res.status(400).send(errMessages);
     }
-
     try {
-      //m.value.date = format(m.value.date, 'yyyy-MM-dd')
-      await db.insertArticle(m.value);
-      res.status(200).send();
+      const id = db.insertArticle(body);
+      res.status(200).send(id);
     } catch (e) {
-      console.log(e);
+      //console.log(e);
       res.status(500).send(e.message);
     }
   } else {
@@ -31,9 +26,14 @@ router.post("/articles", async function (req, res, next) {
   }
 });
 
+/**GET articles by id */
 router.get("/articles/:id", function (req, res, next) {
   try {
-    Joi.assert(req.params.id, Joi.number());
+    try {
+      Joi.assert(req.params.id, Joi.number());
+    } catch (e) {
+      res.status(400).send(e);
+    }
     const result = db.getArticle(req.params.id);
     if (result) {
       result.date = format(new Date(result.date), "yyyy-MM-dd");
@@ -42,11 +42,12 @@ router.get("/articles/:id", function (req, res, next) {
       res.status(204).send();
     }
   } catch (e) {
-    console.log(e);
+    //console.log(e);
     res.status(500).send(e);
   }
 });
 
+/**GET tags by name and date */
 router.get("/tags/:tagName/:date", async function (req, res, next) {
   try {
     const schema = Joi.object().keys({
@@ -56,20 +57,26 @@ router.get("/tags/:tagName/:date", async function (req, res, next) {
     const { tagName, date } = req.params;
     const m = await schema.validate({ tagName, date }, { abortEarly: false });
 
+    if (m.error) {
+      const errMessages = m.error.details.map((v) => v.message);
+      return res.status(400).send(errMessages);
+    }
     /**Apologies for the date slice */
-    const result = await db.getTags(
+    const result = db.getTags(
       tagName,
       date.slice(0, 4) + "-" + date.slice(4, 6) + "-" + date.slice(6, 8)
     );
     if (result && result.length > 0) {
       const relatedTags = {};
-      const articles = result.map((v) => {
-        v.tags.forEach((t) => {
-          if (t !== tagName) relatedTags[t] = "exists";
-        });
-        return v.id;
-      });
-      
+      const articles = result
+        .map((v) => {
+          v.tags.forEach((t) => {
+            if (t !== tagName) relatedTags[t] = "exists";
+          });
+          return v.id;
+        })
+        .sort();
+
       const final = {
         tag: tagName,
         count: result.length,
@@ -81,7 +88,7 @@ router.get("/tags/:tagName/:date", async function (req, res, next) {
       res.status(204).send();
     }
   } catch (e) {
-    console.log(e);
+    //console.log(e);
     res.status(500).send(e);
   }
 });

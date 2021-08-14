@@ -3,14 +3,11 @@ const pgp = require('pg-promise')()
 //const client = require('./index')
 
 module.exports = Object.freeze({
-    async insertArticle(data) {
+    insertArticle(data) {
         const {title, date:postedDate, body, tags} = data
-        //console.log('ddd', data)
         try {
-            const queryText = await pgp.as.format(`INSERT INTO articles(title, posted_date, body, tags) VALUES ($1,$2,$3,$4)`, [title, postedDate, body, tags])
-            console.log(queryText)
-            db.public.none(queryText)
-            // console.log(db.public.many('SELECT * FROM articles'))
+            const queryText = pgp.as.format(`INSERT INTO articles(title, posted_date, body, tags) VALUES ($1,$2,$3,$4) RETURNING id`, [title, postedDate, body, tags])
+            return db.public.one(queryText)
         }
         catch (e) {
             throw e
@@ -24,11 +21,9 @@ module.exports = Object.freeze({
             throw e
         }
     },
-    async getTags(tagName, date) {
+    getTags(tagName, date) {
         try {
-            //console.log(db.public.many('SELECT * FROM articles'))
-            console.log('tagName: ', tagName, date)
-            const queryText = await pgp.as.format(`SELECT id, title, posted_date as date, body, tags FROM articles a WHERE $1=ANY(tags) AND posted_date = $2`, [tagName, date])
+            const queryText = pgp.as.format(`SELECT id, title, posted_date as date, body, tags FROM articles a WHERE $1=ANY(tags) AND posted_date = $2 ORDER BY id DESC LIMIT 10`, [tagName, date])
             return db.public.many(queryText)
         }
         catch (e) {
