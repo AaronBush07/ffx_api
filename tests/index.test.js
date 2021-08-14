@@ -7,11 +7,6 @@ const Joi = require("joi").extend(require("@joi/date"));
 const db = require("../store/index");
 const backup = db.backup();
 
-// beforeEach(()=>{
-//     //Restore db to initial state before every test.
-//     backup.restore();
-// })
-
 it("1 should equal 1", () => {
   expect(1).toBe(1);
 });
@@ -72,54 +67,104 @@ describe("Endpoint reponses", () => {
       };
       const response = await request.post("/articles").send(body);
       expect(response.status).toBe(200);
-      expect(typeof response.body.id).toBe("number")
+      expect(typeof response.body.id).toBe("number");
     });
 
     it("Return 400 from missing data", async () => {
-        const body = {
-            date: "2016-09-22",
-            body: "some text, potentially containing simple markup about how potato chips are great",
-            tags: ["health", "fitness", "science"],
-          };
-          const response = await request.post("/articles").send(body);
+      const body = {
+        date: "2016-09-22",
+        body: "some text, potentially containing simple markup about how potato chips are great",
+        tags: ["health", "fitness", "science"],
+      };
+      const response = await request.post("/articles").send(body);
       expect(response.status).toBe(400);
     });
 
     it("Return 400 from bad data", async () => {
-        const body = {
-            title:
+      const body = {
+        title:
           "latest science shows that potato chips are better for you than sugar",
         date: "2016-09-22",
         body: "some text, potentially containing simple markup about how potato chips are great",
         tags: "health",
-          };
-          const response = await request.post("/articles").send(body);
+      };
+      const response = await request.post("/articles").send(body);
       expect(response.status).toBe(400);
     });
 
     it("Return 400 from bad data", async () => {
-        const body = {
-            title:
+      const body = {
+        title:
           "latest science shows that potato chips are better for you than sugar",
         date: "22-09-2016",
         body: "some text, potentially containing simple markup about how potato chips are great",
         tags: ["health", "fitness", "science"],
-          };
-          const response = await request.post("/articles").send(body);
+      };
+      const response = await request.post("/articles").send(body);
       expect(response.status).toBe(400);
     });
-
-    
   });
 });
 
-describe("Returned Api should conform to joi schema", () => {
-  it("Tags schema response should conform to joi schema", () => {
+describe("Returned Api should conform to given joi schema", () => {
+  it("Tags schema", async () => {
     const schema = Joi.object().keys({
       tag: Joi.string().required(),
       count: Joi.number().required(),
-      articles: Joi.array().items(Joi.string()).required(),
+      articles: Joi.array().items(Joi.number()).required(),
       related_tags: Joi.array().items(Joi.string()).unique(), //Not compulsory
     });
+
+    const response = await request.get("/tags/science/20160922");
+    const m = schema.validate(response.body);
+    expect(response.status).toBe(200);
+    expect(m.error).toBe(undefined);
+  });
+
+  it("Articles schema", async () => {
+    const schema = Joi.object().keys({
+      id: Joi.number().required(),
+      title: Joi.string().required(),
+      date: Joi.date().format("YYYY-MM-DD").required(),
+      body: Joi.string().required(),
+      tags: Joi.array().items(Joi.string()).required(),
+    });
+
+    const response = await request.get("/articles/1");
+    const m = schema.validate(response.body);
+    expect(response.status).toBe(200);
+    expect(m.error).toBe(undefined);
+  });
+});
+
+describe("End to End", () => {
+  it("POST and GET the same article and article should conform to schema", async () => {
+    const schema = Joi.object().keys({
+      id: Joi.number().required(),
+      title: Joi.string().required(),
+      date: Joi.date().format("YYYY-MM-DD").required(),
+      body: Joi.string().required(),
+      tags: Joi.array().items(Joi.string()).required(),
+    });
+
+    const body = {
+      title: "This is a test for Jest Only",
+      date: "2021-08-15",
+      body: "POST and GET the same article and article should conform to schema",
+      tags: ["testing", "science"],
+    };
+    const postResponse = await request.post("/articles").send(body);
+    const { id = undefined } = postResponse.body;
+
+    expect(id !== undefined).toBe(true);
+    const expectedResult = { id, ...body };
+
+    const getResponse = await request.get(`/articles/${id}`);
+    expect(getResponse.status).toBe(200);
+
+    const m = schema.validate(getResponse.body);
+
+    expect(m.error).toBe(undefined);
+    expect(getResponse.body).toEqual(expectedResult);
   });
 });
