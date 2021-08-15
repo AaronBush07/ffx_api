@@ -167,4 +167,59 @@ describe("End to End", () => {
     expect(m.error).toBe(undefined);
     expect(getResponse.body).toEqual(expectedResult);
   });
+
+  it("No duplicates for related tags", async ()=> {
+    const entries = [
+      {
+        title: "This is a test for Jest Only",
+        date: "2021-08-15",
+        body: "POST and GET the same article and article should conform to schema",
+        tags: ["testing", "science"],
+      },
+      {
+        title: "This is a test for Jest Only",
+        date: "2021-08-15",
+        body: "POST and GET the same article and article should conform to schema",
+        tags: ["testing", "science"],
+      },
+      {
+        title: "This is a test for Jest Only",
+        date: "2021-08-15",
+        body: "POST and GET the same article and article should conform to schema",
+        tags: ["testing", "science"],
+      },
+      {
+        title: "This is a test for Jest Only",
+        date: "2021-08-15",
+        body: "POST and GET the same article and article should conform to schema",
+        tags: ["testing", "science"],
+      },
+      {
+        title: "This is a test for Jest Only",
+        date: "2021-08-15",
+        body: "POST and GET the same article and article should conform to schema",
+        tags: ["testing", "science"],
+      }
+    ]
+
+
+    entries.forEach(async entry=> {
+      await request.post('/articles').send(entry)
+    });
+
+    const schema = Joi.object().keys({
+      tag: Joi.string().required(),
+      count: Joi.number().required(),
+      articles: Joi.array().items(Joi.number()).required(),
+      related_tags: Joi.array().items(Joi.string()).unique(), //Not compulsory
+    });
+
+    const response = await request.get('/tags/testing/20210815')
+    console.log(response.body)
+    const m = schema.validate(response.body)
+
+    expect(m.error).toBe(undefined);
+
+
+  })
 });

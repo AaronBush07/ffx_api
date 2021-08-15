@@ -62,12 +62,15 @@ router.get("/tags/:tagName/:date", async function (req, res, next) {
       return res.status(400).send(errMessages);
     }
     /**Apologies for the date slice */
+    const formattedDate = date.slice(0, 4) + "-" + date.slice(4, 6) + "-" + date.slice(6, 8)
     const result = db.getTags(
       tagName,
-      date.slice(0, 4) + "-" + date.slice(4, 6) + "-" + date.slice(6, 8)
+      formattedDate
     );
     if (result && result.length > 0) {
+      const rowCount = db.getRowCount(tagName, formattedDate);
       const relatedTags = {};
+      console.log(result)
       const articles = result
         .map((v) => {
           v.tags.forEach((t) => {
@@ -79,7 +82,7 @@ router.get("/tags/:tagName/:date", async function (req, res, next) {
 
       const final = {
         tag: tagName,
-        count: result.length,
+        count: rowCount,
         articles,
         related_tags: Object.keys(relatedTags),
       };
@@ -88,7 +91,7 @@ router.get("/tags/:tagName/:date", async function (req, res, next) {
       res.status(204).send();
     }
   } catch (e) {
-    //console.log(e);
+    console.log(e);
     res.status(500).send(e);
   }
 });
