@@ -70,15 +70,16 @@ router.get("/tags/:tagName/:date", async function (req, res, next) {
     if (result && result.length > 0) {
       const rowCount = db.getRowCount(tagName, formattedDate);
       const relatedTags = {};
-      console.log(result)
       const articles = result
         .map((v) => {
           v.tags.forEach((t) => {
             if (t !== tagName) relatedTags[t] = "exists";
           });
-          return v.id;
+          return String(v.id);
         })
-        .sort();
+        .sort((a,b)=>{
+          return Number(a) > Number(b)
+        });
 
       const final = {
         tag: tagName,

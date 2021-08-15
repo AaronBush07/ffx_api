@@ -111,7 +111,7 @@ describe("Returned Api should conform to given joi schema", () => {
     const schema = Joi.object().keys({
       tag: Joi.string().required(),
       count: Joi.number().required(),
-      articles: Joi.array().items(Joi.number()).required(),
+      articles: Joi.array().items(Joi.string()).required(),
       related_tags: Joi.array().items(Joi.string()).unique(), //Not compulsory
     });
 
@@ -154,6 +154,7 @@ describe("End to End", () => {
       tags: ["testing", "science"],
     };
     const postResponse = await request.post("/articles").send(body);
+    expect(postResponse.status).toBe(200);
     const { id = undefined } = postResponse.body;
 
     expect(id !== undefined).toBe(true);
@@ -168,7 +169,7 @@ describe("End to End", () => {
     expect(getResponse.body).toEqual(expectedResult);
   });
 
-  it("No duplicates for related tags", async ()=> {
+  it("No duplicates for related tags", async () => {
     const entries = [
       {
         title: "This is a test for Jest Only",
@@ -199,27 +200,42 @@ describe("End to End", () => {
         date: "2021-08-15",
         body: "POST and GET the same article and article should conform to schema",
         tags: ["testing", "science"],
-      }
-    ]
+      },
+    ];
 
-
-    entries.forEach(async entry=> {
-      await request.post('/articles').send(entry)
+    entries.forEach(async (entry) => {
+      await request.post("/articles").send(entry);
     });
 
     const schema = Joi.object().keys({
       tag: Joi.string().required(),
       count: Joi.number().required(),
-      articles: Joi.array().items(Joi.number()).required(),
+      articles: Joi.array().items(Joi.string()).required(),
       related_tags: Joi.array().items(Joi.string()).unique(), //Not compulsory
     });
 
-    const response = await request.get('/tags/testing/20210815')
-    console.log(response.body)
-    const m = schema.validate(response.body)
+    const response = await request.get("/tags/testing/20210815");
+    const m = schema.validate(response.body);
 
     expect(m.error).toBe(undefined);
+  });
 
+  
+});
 
-  })
+it("sql injection test", async () => {
+  const body = {
+    title: `'; drop table articles; commit;`,
+    date: "2021-08-15",
+    body: "This table should still exist after posting",
+    tags: ["testing", "science"],
+  };
+  const postResponse = await request.post("/articles").send(body);
+  const { id = undefined } = postResponse.body;
+  expect(id !== undefined).toBe(true);
+  const expectedResult = { id, ...body };
+  expect(postResponse.status).toBe(200);
+  const getResponse = await request.get(`/articles/${id}`);
+  expect(getResponse.status).toBe(200);
+  expect(getResponse.body).toEqual(expectedResult);
 });
